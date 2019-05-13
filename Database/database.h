@@ -51,8 +51,6 @@ public:
     QVector<Examer> getExamerRanklist();
     void gamerSignout(QString username);
     void examerSignout(QString username);
-//    STATE getGamerState(QString username);
-//    STATE getExamerState(QString username);
 private:
     QSqlQuery *query;
 };
