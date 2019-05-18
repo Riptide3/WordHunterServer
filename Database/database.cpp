@@ -34,6 +34,9 @@ void Database::init()
                     level int, experiencePoint int, \
                     QuestionNumber int, state int)");
         query->exec("create table words(word varchar(30) primary key)");
+        query->exec("create table arena(username varchar(20) primary key, \
+                    opponent varchar(20), state int, clientNumber int, \
+                    correct int, time int)");
     }
 }
 
@@ -395,4 +398,167 @@ void Database::examerSignout(QString username)
     {
         qDebug() << query->lastError();
     }
+}
+
+void Database::addMatchInfo(QString username, int clientNum)
+{
+    query = new QSqlQuery;
+    QString getGamer = QString("select * from arena where \
+                             username = '%1'").arg(username);
+    if(query->exec(getGamer))
+    {
+        if(query->first())
+        {
+            qDebug() << "已经在匹配列表中了" << Database::getMatchState(username);
+        }
+        else
+        {
+            QString nExamer = QString("insert into arena values(?, ?, ?, ?, ?, ?)");
+            query->prepare(nExamer);
+            query->bindValue(0, username);
+            query->bindValue(1, "");
+            query->bindValue(2, MATCHING);
+            query->bindValue(3, clientNum);
+            query->bindValue(4, 0);
+            query->bindValue(5, 0);
+            query->exec();
+            qDebug() << "匹配列表添加成功";
+        }
+    }
+    else
+    {
+        qDebug() << query->lastError();
+    }
+}
+
+STATE Database::match(QString username)
+{
+    query = new QSqlQuery;
+    QString match = QString("select * from arena where \
+                                state = %1 \
+                                and username != '%2'").arg(MATCHING).arg(username);
+    query->exec(match);
+    if(query->first())
+    {
+        QSqlQuery queryagain;
+        QString getItself = QString("select * from arena where \
+                                        username = '%1'").arg(username);
+        queryagain.exec(getItself);
+        queryagain.first();
+        qDebug() << "是否已经开始PK了？";
+        if(queryagain.value(2).toInt() == PKING)
+        {
+            qDebug() << "已经开始PK了" << query->lastError();
+            return MATCHFAILURE_PKING;
+        }
+        else
+        {
+            QString opponent = query->value(0).toString();
+            qDebug() << "匹配成功，更新用户信息";
+            updateMatchInfo(username, opponent, PKING, 0, 0);
+            qDebug() << "更新完一个";
+            updateMatchInfo(opponent, username, PKING, 0, 0);
+            return MATCHSUCCESS;
+        }
+    }
+    else
+    {
+        qDebug() << "匹配不到玩家" << query->lastError();
+        return MATCHFAILURE_MATCHING;
+    }
+}
+
+STATE Database::getMatchState(QString username)
+{
+    query = new QSqlQuery;
+    QString getState = QString("select * from arena where \
+                                    username = '%1'").arg(username);
+    query->exec(getState);
+    query->first();
+    return static_cast<STATE>(query->value(2).toInt());
+}
+
+QString Database::getOpponent(QString username)
+{
+    query = new QSqlQuery;
+    QString getOpponent = QString("select * from arena where \
+                                        username = '%1'").arg(username);
+    query->exec(getOpponent);
+    if(query->first())
+    {
+        return query->value(1).toString();
+    }
+    else
+    {
+        qDebug() << "未得到对手的用户名";
+        return "";
+    }
+}
+
+int Database::getClientNum(QString username)
+{
+    query = new QSqlQuery;
+    QString getClientNum = QString("select * from arena where \
+                                        username = '%1'").arg(username);
+    query->exec(getClientNum);
+    if(query->first())
+        return query->value(3).toInt();
+    else
+    {
+        qDebug() << "找不到对应的客户端tcp号" << query->lastError();
+        return 0;
+    }
+}
+
+int Database::getCorrectNum(QString username)
+{
+    query = new QSqlQuery;
+    QString getCorrectNum = QString("select * from arena where \
+                                        username = '%1'").arg(username);
+    query->exec(getCorrectNum);
+    query->first();
+    return query->value(4).toInt();
+}
+
+int Database::getTimeCost(QString username)
+{
+    query = new QSqlQuery;
+    QString getTimeCost = QString("select * from arena where \
+                                        username = '%1'").arg(username);
+    query->exec(getTimeCost);
+    query->first();
+    return query->value(5).toInt();
+}
+
+void Database::updateMatchInfo(QString username, QString opponent, STATE state, \
+                               int correct, int time)
+{
+    query = new QSqlQuery;
+    QString updateInfo = QString("update arena \
+                                    set opponent = '%1', \
+                                    state = %2, \
+                                    correct = %3, \
+                                    time = %4 \
+                                    where username = '%5'").arg(opponent) \
+                                                           .arg(state) \
+                                                           .arg(correct) \
+                                                           .arg(time) \
+                                                           .arg(username);
+    if(query->exec(updateInfo))
+    {
+        qDebug() << "匹配信息更新成功";
+    }
+    else
+    {
+        qDebug() << "匹配信息更新失败" << query->lastError();
+    }
+}
+
+void Database::removeMatchInfo(QString username)
+{
+    qDebug() << "删除" << username << "的匹配记录";
+    query = new QSqlQuery;
+    QString remove = QString("delete from arena where \
+                                username = '%1'").arg(username);
+    query->exec(remove);
 }

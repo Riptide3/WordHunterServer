@@ -29,7 +29,23 @@ struct Examer
     int questionNum;
 };
 
-enum STATE {OFFLINE, ONLINE, WRONGPASSWD, NOUSER};
+enum STATE
+{
+    OFFLINE,
+    ONLINE,
+    WRONGPASSWD,
+    NOUSER,
+    MATCHING,
+    PKING,
+    PKEND,
+    MATCHSUCCESS,
+    MATCHFAILURE_MATCHING,
+    MATCHFAILURE_PKING,
+    WIN,
+    LOSE,
+    DRAW,
+    WAIT
+};
 
 class Database
 {
@@ -51,6 +67,16 @@ public:
     QVector<Examer> getExamerRanklist();
     void gamerSignout(QString username);
     void examerSignout(QString username);
+    void addMatchInfo(QString username, int clientNum);
+    STATE match(QString username);
+    STATE getMatchState(QString username);
+    QString getOpponent(QString username);
+    int getClientNum(QString username);
+    int getCorrectNum(QString username);
+    int getTimeCost(QString username);
+    void updateMatchInfo(QString username, QString opponent, STATE state, \
+                         int correct, int time);
+    void removeMatchInfo(QString username);
 private:
     QSqlQuery *query;
 };

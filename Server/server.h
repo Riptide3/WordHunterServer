@@ -32,7 +32,11 @@ enum FUNCTION
     GET_GAMERRANKLIST,
     GET_EXAMERRANKLIST,
     UPDATE_GAMERINFO,
-    UPDATE_EXAMERINFO
+    UPDATE_EXAMERINFO,
+    GAMERMATCH,
+    GET_PKRESULT,
+    CANCELMATCH,
+    UPDATE_PKINFO
 };
 
 
@@ -56,12 +60,17 @@ public:
     void examerSignout(int clientNum, QString username);
     void updateGamerInfo(int clientNum, Gamer gamer);
     void updateExamerInfo(int clientNum, Examer examer);
+    void updatePkInfo(Gamer gamer);
     void getGamerRanklist(int clientNum);
     void getExamerRanklist(int clientNum);
+    void match(int clientNum, QString username);
+    void getPkResult(QString username, int correctNum, int time);
+    void cancelMatch(QString username);
 protected:
     void initServer();
 private:
     void sendInfo(QJsonObject infoObject, int clientNum);
+    void sendInfo(QJsonArray infoArray, int clientNum);
 private slots:
     void on_startButton_clicked();
     void on_endButton_clicked();
